@@ -1,8 +1,3 @@
-import CarController from './CarController';
-import UserController from './UserController';
-import RequestController from './RequestController';
+import UserController from "./UserController";
 
-export {
-  CarController, UserController, RequestController
-};
-
+export { UserController }; // you can import and add other controllers

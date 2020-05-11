@@ -1,8 +1,3 @@
-import User from './User';
-import Message from './Message';
-import Request from './Request';
-import Car from './Car';
+import User from "./User";
 
-export {
-  User, Message, Request, Car
-};
+export { User }; // you can import and add other models

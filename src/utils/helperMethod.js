@@ -13,7 +13,7 @@ class HelperMethods {
   static serverError(res, message) {
     return res.status(500).json({
       success: false,
-      message: message || 'Internal server error',
+      message: message || "Internal server error",
     });
   }
 
@@ -39,7 +39,7 @@ class HelperMethods {
    * @returns {object} res - HTTP response object
    */
   static requestSuccessful(res, payload, status = 200) {
-    return res.status(status).json({ data: payload });
+    return res.status(status).json(payload);
   }
 
   /* eslint-enable no-useless-escape */
@@ -53,8 +53,8 @@ class HelperMethods {
    */
   static checkExpressErrors(err, req, res, next) {
     res.status(500).json({
-      message: 'Something failed',
-      success: false
+      message: "Something failed",
+      success: false,
     });
     next();
   }

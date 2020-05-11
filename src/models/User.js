@@ -1,17 +1,15 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model } from "mongoose";
 
 const userSchema = Schema({
-  firstName: {
+  name: {
     type: String,
     required: true,
-    max: 20,
+    max: 50,
     min: 2,
   },
-  lastName: {
-    type: String,
+  id: {
+    type: Number,
     required: true,
-    max: 20,
-    min: 2,
   },
   email: {
     type: String,
@@ -19,76 +17,28 @@ const userSchema = Schema({
     max: 255,
     min: 6,
   },
-  username: {
-    type: String,
-    required: true,
-    max: 20,
-    min: 3,
-  },
+
   password: {
     type: String,
     required: true,
     max: 1024,
     min: 6,
   },
-  address: {
-    type: String,
-    min: 5,
-    max: 50,
-  },
-  city: {
-    type: String,
-    min: 2,
-    max: 15
-  },
-  state: {
-    type: String,
-    min: 3,
-    max: 15,
-  },
-  phoneNumber: {
+
+  phone: {
     type: String,
     min: 8,
     max: 12,
-  },
-  profilePicture: {
-    type: String,
-    min: 10,
-    max: 100
-  },
-  isVerified: {
-    type: Boolean,
-    default: false,
-  },
-  isSubscribed: {
-    type: Boolean,
-    default: true,
-  },
-  hasProfile: {
-    type: Boolean,
-    default: false,
-  },
-  rememberDetails: {
-    type: Boolean,
-    default: false,
-  },
-  private: {
-    type: Boolean,
-    default: false,
-  },
-  status: {
-    type: String,
-    default: 'active',
+    required: true,
   },
   role: {
     type: String,
-    default: 'member'
+    default: "member",
   },
-  date: {
+  created_at: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
-  cars: [{ type: Schema.Types.ObjectId, ref: 'Car' }]
 });
 
-module.exports = model('User', userSchema);
+module.exports = model("User", userSchema);
