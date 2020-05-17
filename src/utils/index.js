@@ -1,3 +1,4 @@
 import HelperMethods from "./helperMethod";
 import CryptData from "./cryptData";
-export { HelperMethods, CryptData };
+import TokenService from "./authentication";
+export { HelperMethods, CryptData, TokenService };

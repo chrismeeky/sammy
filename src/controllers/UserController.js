@@ -1,5 +1,6 @@
 import { User } from "../models";
-import { HelperMethods, CryptData } from "../utils";
+import { HelperMethods, CryptData, TokenService } from "../utils";
+import Nexmo from "nexmo";
 
 /**
  * Class representing the user controller
@@ -10,42 +11,61 @@ class UserController {
   constructor() {}
 
   static async validatePhone(req, res) {
-    // simulate sending OTP
-    const sendOTP = (phone, status) => {
-      return {
-        status,
-        message: status
-          ? `OTP Sent to ${phone}`
-          : `Unable to send to ${phone} Please try again later`,
-      };
-    };
+    const NEXMO_API_KEY = process.env.NEXMO_API_KEY;
+    const NEXMO_API_SECRET = process.env.NEXMO_API_SECRET;
+    const NEXMO_BRAND_NAME = process.env.NEXMO_BRAND_NAME;
+    const nexmo = new Nexmo({
+      apiKey: NEXMO_API_KEY,
+      apiSecret: NEXMO_API_SECRET,
+    });
+    const OTP = Math.floor(Math.random() * 1000000);
     try {
       const { phone } = req.body;
+      const from = NEXMO_BRAND_NAME;
+      const to = phone;
+      const text = `OTP code for your BloomRydes verification is ${OTP} . Thank you`;
       const userFound = await User.findOne({ phone });
-
-      const isSentOTP = await sendOTP(phone, userFound && !isNaN(userFound.id));
-      return HelperMethods.requestSuccessful(
-        res,
-        {
-          status: isSentOTP.status,
+      if (userFound) {
+        return HelperMethods.clientError(res, {
+          status: false,
+          message: `Phone number is registered. Please proceed to login`,
+        });
+      }
+      const token = await TokenService.getToken({ phone, OTP }, "1h");
+      nexmo.message.sendSms(from, to, text, (err, responseData) => {
+        const errorMessage = {
+          status: false,
           phone,
-          otp: this.OTP,
-          message: isSentOTP.message,
-          has_password: isSentOTP.status,
-        },
-        isSentOTP.status ? 200 : 400
-      );
+          otp: OTP,
+          message: `Unable to send to ${phone} Please try again later`,
+          has_password: false,
+        };
+        if (err) {
+          return HelperMethods.clientError(res, errorMessage);
+        } else {
+          if (responseData.messages[0]["status"] === "0") {
+            return HelperMethods.requestSuccessful(
+              res,
+              {
+                status: true,
+                phone,
+                otp: OTP,
+                token,
+                message: `OTP Sent to ${phone}`,
+                has_password: true,
+              },
+              200
+            );
+          } else {
+            return HelperMethods.clientError(res, errorMessage);
+          }
+        }
+      });
     } catch (error) {
       return HelperMethods.serverError(res, error.message);
     }
   }
   static async loginWithPasswordOrToken(req, res) {
-    const OTP = 456867846;
-    // simulate OTP verification
-    const verifyOTP = (otp) => {
-      return otp == OTP;
-    };
-    let loggedIn;
     try {
       const errorResponse = {
         1: {
@@ -57,36 +77,52 @@ class UserController {
           message: "incorrect login details",
         },
       };
-      const { phone, password, token, channel } = req.body;
-      const userFound = await User.findOne({ phone });
+      const { phone, password, token, channel, otp } = req.body;
 
-      if (!userFound) {
-        return res.status(400).json(errorResponse[channel]);
-      }
       if (token) {
-        const isVerifiyToken = await verifyOTP(token);
-        loggedIn = isVerifiyToken;
+        const result = await TokenService.verifyToken(token);
+        if (
+          result.success &&
+          result.data.phone.toString() == phone.toString() &&
+          result.data.OTP == otp
+        ) {
+          return HelperMethods.requestSuccessful(
+            res,
+            {
+              id: null,
+              name: null,
+              phone,
+              email: null,
+              status: true,
+            },
+            200
+          );
+        }
       }
       if (password) {
+        const userFound = await User.findOne({ phone });
+        if (!userFound) {
+          return res.status(400).json(errorResponse[channel]);
+        }
         const isPasswordValid = await CryptData.decryptData(
           password,
           userFound.password
         );
-        loggedIn = isPasswordValid;
+        if (isPasswordValid) {
+          return HelperMethods.requestSuccessful(
+            res,
+            {
+              id: userFound.id,
+              name: userFound.name,
+              phone,
+              email: userFound.email,
+              status: true,
+            },
+            200
+          );
+        }
       }
-      if (loggedIn) {
-        return HelperMethods.requestSuccessful(
-          res,
-          {
-            id: userFound.id,
-            name: null,
-            phone,
-            email: null,
-            status: true,
-          },
-          200
-        );
-      }
+
       return res.status(401).json(errorResponse[channel]);
     } catch (error) {
       return HelperMethods.serverError(res, error.message);
