@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Authentication and profile update",
   "scripts": {
-    
     "dev-start": "set NODE_ENV=development && nodemon --exec babel-node src/index.js",
     "build": "npm run clean && babel ./src -d build",
     "clean": "rm -rf ./build && mkdir build",
@@ -23,7 +22,8 @@
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.3.2",
     "mongoose": "^5.7.3",
-    "multer": "^1.4.2"
+    "multer": "^1.4.2",
+    "nexmo": "^2.6.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.5.5",
