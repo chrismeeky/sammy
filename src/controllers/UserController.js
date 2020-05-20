@@ -1,4 +1,4 @@
-import { User } from "../models";
+import { User, Otp } from "../models";
 import { HelperMethods, CryptData, TokenService } from "../utils";
 import Nexmo from "nexmo";
 
@@ -31,6 +31,8 @@ class UserController {
           message: `Phone number is registered. Please proceed to login`,
         });
       }
+      const newOtp = new Otp({ phone, otp: OTP });
+      await newOtp.save();
       const token = await TokenService.getToken({ phone, OTP }, "1h");
       nexmo.message.sendSms(from, to, text, (err, responseData) => {
         const errorMessage = {
@@ -220,6 +222,140 @@ class UserController {
       return HelperMethods.clientError(res, "User does not exist", 404);
     } catch (error) {
       return HelperMethods.serverError(res, error.message);
+    }
+  }
+  /**
+   *
+   * @description method that gets current user's settings
+   * @static
+   * @param {object} req client request
+   * @param {object} res server response
+   * @returns {object} server response object
+   * @memberof ProfileController
+   */
+  static async getProfile(req, res) {
+    try {
+      const user = await User.findOne({ _id: req.body.id });
+      if (user) {
+        return HelperMethods.requestSuccessful(
+          res,
+          {
+            success: true,
+            userDetails: user,
+          },
+          200
+        );
+      }
+      return HelperMethods.clientError(res, "User not found", 404);
+    } catch (error) {
+      return HelperMethods.serverError(res);
+    }
+  }
+  /**
+   *
+   * @description method that gets all user's settings
+   * @static
+   * @param {object} req client request
+   * @param {object} res server response
+   * @returns {object} server response object
+   * @memberof ProfileController
+   */
+  static async getProfiles(req, res) {
+    const payload = req.decoded;
+
+    try {
+      if (payload.role !== "Super Administrator") {
+        return HelperMethods.clientError(
+          res,
+          "Only a super admin" + " can view all users",
+          401
+        );
+      }
+      const users = await User.find({});
+      if (users) {
+        return HelperMethods.requestSuccessful(
+          res,
+          {
+            success: true,
+            userDetails: users,
+          },
+          200
+        );
+      }
+      return HelperMethods.clientError(res, "Users not found", 404);
+    } catch (error) {
+      return HelperMethods.serverError(res);
+    }
+  }
+  /**
+   *
+   * @description method that gets current user's settings
+   * @static
+   * @param {object} req client request
+   * @param {object} res server response
+   * @returns {object} server response object
+   * @memberof ProfileController
+   */
+  static async deleteUser(req, res) {
+    try {
+      const user = await User.findOne({ _id: req.body.id });
+      if (user) {
+        const deletedUser = User.deleteOne({ _id: req.body.id });
+        if (deletedUser) {
+          return HelperMethods.requestSuccessful(
+            res,
+            {
+              success: true,
+              message: "user deleted successfully",
+            },
+            200
+          );
+        }
+      }
+      return HelperMethods.clientError(res, "User not found", 404);
+    } catch (error) {
+      return HelperMethods.serverError(res);
+    }
+  }
+  /**
+   * Verify a user's email
+   * Route: POST: /update_user
+   * @param {object} req - HTTP Request object
+   * @param {object} res - HTTP Response object
+   * @return {res} res - HTTP Response object
+   * @memberof UserController
+   */
+  static async updateUserRole(req, res) {
+    const payload = req.decoded;
+    const { role, email } = req.body;
+    try {
+      if (payload.role !== "Super Administrator") {
+        return HelperMethods.clientError(
+          res,
+          "Only a super admin" + " can update user role",
+          401
+        );
+      }
+      const userToUpdate = await User.findOne({ email });
+      if (!userToUpdate) {
+        return HelperMethods.clientError(res, "User not found", 404);
+      }
+      if (userToUpdate.role === role) {
+        return HelperMethods.clientError(res, `user is already a ${role}`, 409);
+      }
+      await User.updateOne({ email }, { $set: { role } });
+      return HelperMethods.requestSuccessful(
+        res,
+        {
+          success: true,
+          message: "Role updated successfully",
+        },
+        200
+      );
+    } catch (error) {
+      if (error.errors)
+        return HelperMethods.sequelizeValidationError(res, error);
+      return HelperMethods.serverError(res);
     }
   }
 }

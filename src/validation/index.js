@@ -58,7 +58,19 @@ class Validate {
     if (emptyField) return allFieldsRequired(res, emptyField);
     next();
   }
-
+/**
+   * @param {object} req - Request object
+   * @param {object} res - Response object
+   * @param {callback} next - The callback that passes the request to the next handler
+   * @returns {object} res - Response object when query is invalid
+   * @memberof Validate
+   */
+  static validateRoleUpdate(req, res, next) {
+    req.body = trimValues(req.body);
+    const emptyField = checkForEmptyFields(req.body);
+    if (emptyField) return allFieldsRequired(res, emptyField);
+    next();
+  }
   /**
    * @param {object} req - Request object
    * @param {object} res - Response object
